@@ -1,0 +1,170 @@
+{
+  "Comment": "A Data Pipeline Demo with Transient EMR Clusters",
+  "StartAt": "Create A Cluster",
+  "States": {
+    "Create A Cluster":{
+      "Type":"Task",
+      "ResultPath":"$.CreateClusterResult",
+      "Resource":"arn:aws:states:::elasticmapreduce:createCluster.sync",
+      "Parameters":{
+        "Name.$":"$.Name",
+        "VisibleToAllUsers": true,
+        "ReleaseLabel.$": "$.ReleaseLabel",
+        "ServiceRole": "EMR_DefaultRole",
+        "JobFlowRole": "EMR_EC2_DefaultRole",
+        "LogUri.$": "$.LogUri",
+        "ManagedScalingPolicy": { 
+      "ComputeLimits": { 
+         "MaximumCapacityUnits": 2,
+         "MaximumCoreCapacityUnits": 2,
+         "MaximumOnDemandCapacityUnits": 1,
+         "MinimumCapacityUnits": 1,
+         "UnitType": "InstanceFleetUnits"
+      }
+   },
+        "StepConcurrencyLevel": 10,
+        "Instances":{
+      "Ec2SubnetIds.$": "$.Args[*]",
+      "EmrManagedMasterSecurityGroup.$": "$.EmrManagedMasterSecurityGroup",
+      "EmrManagedSlaveSecurityGroup.$": "$.EmrManagedSlaveSecurityGroup",
+      "KeepJobFlowAliveWhenNoSteps": true,
+          
+          "InstanceFleets":[
+            {
+              "Name": "MasterFleet",
+              "InstanceFleetType": "MASTER",
+              "TargetOnDemandCapacity": 1,
+              "InstanceTypeConfigs": [
+                {
+                  "InstanceType.$": "$.MasterInstanceType"
+                }
+              ]
+            },
+            {
+              "Name": "CoreFleet",
+              "InstanceFleetType": "CORE",
+              "TargetSpotCapacity": 1,
+              "TargetOnDemandCapacity": 0,
+              "LaunchSpecifications": {
+                "OnDemandSpecification": {
+                  "AllocationStrategy":"lowest-price"
+                },
+                "SpotSpecification":{
+                  "AllocationStrategy":"capacity-optimized",
+                  "TimeoutDurationMinutes": 20,
+                  "TimeoutAction": "SWITCH_TO_ON_DEMAND"
+                }
+              },
+              "InstanceTypeConfigs": [
+                {
+                  "InstanceType.$": "$.CoreInstanceType1"
+                },
+                {
+                  "InstanceType.$": "$.CoreInstanceType2"
+                }
+              ]
+            }
+          ]
+        },
+        "Applications": [
+          {
+            "Name": "Hadoop"
+          },
+          {
+            "Name": "Hive"
+          },
+          {
+            "Name": "Spark"
+          },
+          {
+            "Name": "Presto"
+          }
+        ],
+        "Configurations": [
+          {
+            "Classification": "spark-env",
+            "Properties": {},
+            "Configurations":[
+              {
+                "Classification": "export",
+            "Properties": {
+              "PYSPARK_PYTHON.$": "$.PYSPARK_PYTHON"
+            }
+              }
+            ] 
+            
+          }
+        ],
+        "Tags":[
+          {
+            "Key": "Name",
+            "Value.$": "$.Name"
+          }
+        ]
+        
+      },
+      
+      "Next":"Enable_Termination_Protection"
+    },
+    "Enable_Termination_Protection":{
+      "Type":"Task",
+      "Resource":"arn:aws:states:::elasticmapreduce:setClusterTerminationProtection",
+      "Parameters":{
+        "ClusterId.$":"$.CreateClusterResult.ClusterId",
+        "TerminationProtected":true
+      },
+      "ResultPath":null,
+      "Next":"Process_Spark_Job"
+    },
+    "Process_Spark_Job": {
+      "Type": "Task",
+      "InputPath": "$",
+      "Resource": "arn:aws:states:::elasticmapreduce:addStep.sync",
+      "Parameters": {
+        "ClusterId.$": "$.CreateClusterResult.ClusterId",
+        "Step": {
+          "Name": "Process json Files",
+          "ActionOnFailure": "CONTINUE",
+          "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args.$": "$.inp.FormattedInputsForEmr.Args[*][*]"
+          }
+        }
+      },
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": null,
+          "Next": "Disable_Termination_Protection"
+        }
+      ],
+      "ResultPath": null,
+      "Next": "Disable_Termination_Protection"
+    },
+    "Disable_Termination_Protection":{
+      "Type":"Task",
+      "Resource":"arn:aws:states:::elasticmapreduce:setClusterTerminationProtection",
+      "Parameters":{
+        "ClusterId.$":"$.CreateClusterResult.ClusterId",
+        "TerminationProtected":false
+      },
+      "ResultPath":null,
+      "Next":"Terminate_Cluster"
+    },
+    "Terminate_Cluster":{
+      "Type":"Task",
+      "Resource":"arn:aws:states:::elasticmapreduce:terminateCluster.sync",
+      "Parameters":{
+        "ClusterId.$":"$.CreateClusterResult.ClusterId"
+      },
+      "ResultPath":null,
+      "Next":"Wrapping_Up"
+    },
+    "Wrapping_Up":{
+      "Type":"Pass",
+      "End":true
+    }    
+  }
+}
