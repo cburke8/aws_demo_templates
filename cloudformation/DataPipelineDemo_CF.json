@@ -1,0 +1,513 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters" : {
+        "VPCID" :{
+            "Type":"String",
+            "Default":"vpc-c8d1e9af",
+            "Description":"Enter Your VPC ID"
+        },
+        "Subnet1":{
+            "Type":"String",
+            "Default":"subnet-470fe421",
+            "Description":"Enter 1st Subnet"
+        },
+        "Subnet2":{
+            "Type":"String",
+            "Default":"subnet-38cccb63",
+            "Description":"Enter 2nd Subnet"
+        },
+        "AcctId":{
+            "Type":"String",
+            "Default":"7100",
+            "Description":"Enter Last Four Digit of Account"
+        }
+    },
+    "Resources": {
+        "StepFunctionCwEmrRole": {
+            "Type" : "AWS::IAM::Role",
+            "Properties" : {
+                "AssumeRolePolicyDocument":{
+                    "Statement": [{
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": ["states.amazonaws.com","events.amazonaws.com"]
+                        },
+                        "Action": "sts:AssumeRole"
+                    }]
+                },
+                "RoleName" : "StepFunctionCwEmrRole"
+            }
+        },
+        "EmrRunJobFlowPolicy": {
+            "Type" : "AWS::IAM::Policy",
+            "Properties" : {
+                "PolicyDocument" : {
+                    "Statement": [{
+                        "Effect": "Allow",
+                        "Action": [
+                            "elasticmapreduce:DescribeStep",
+                            "elasticmapreduce:ListInstances",
+                            "elasticmapreduce:ListBootstrapActions",
+                            "elasticmapreduce:ListSteps",
+                            "elasticmapreduce:ListInstanceFleets",
+                            "elasticmapreduce:AddJobFlowSteps",
+                            "elasticmapreduce:DescribeCluster",
+                            "elasticmapreduce:RunJobFlow",
+                            "elasticmapreduce:DescribeJobFlows",
+                            "elasticmapreduce:TerminateJobFlows",
+                            "elasticmapreduce:CancelSteps"
+                            ],
+                        "Resource": "*"
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": "iam:PassRole",
+                        "Resource": [
+                            {"Fn::Join" : [":", ["arn:aws:iam:",{
+                                "Ref": "AWS::AccountId"
+                              },"role/EMR_DefaultRole"]]
+                            },
+                            {"Fn::Join" : [":", ["arn:aws:iam:",{
+                                "Ref": "AWS::AccountId"
+                              },"role/EMR_EC2_DefaultRole"]]
+                            } ]
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "events:PutTargets",
+                            "events:PutRule",
+                            "events:DescribeRule"
+                            ],
+                        "Resource": [
+                            {"Fn::Join" : [":", ["arn:aws:events",{"Ref": "AWS::Region"},{
+                                "Ref": "AWS::AccountId"
+                              },"rule/StepFunctionsGetEventForEMRRunJobFlowRule"]]
+                            }
+                        ]
+                    }]
+                },
+                "PolicyName" : "EmrRunJobFlow",
+                "Roles" : [ { 
+                    "Ref": "StepFunctionCwEmrRole"
+                } ]
+            }
+        },
+        "EmrTerminationProtectionFullAccessPolicy": {
+            "Type" : "AWS::IAM::Policy",
+            "Properties" : {
+                "PolicyDocument" : {    
+                    "Statement": [{
+                        "Effect": "Allow",
+                        "Action": "elasticmapreduce:SetTerminationProtection",
+                        "Resource": "arn:aws:elasticmapreduce:*:*:cluster/*"
+                    }]
+                },
+                "PolicyName" : "EmrTerminationProtectionFullAccess",
+                "Roles" : [ { 
+                    "Ref": "StepFunctionCwEmrRole"
+                } ]
+            }
+        },
+        "CloudwatchStepFunctionInvokePolicy": {
+            "Type" : "AWS::IAM::Policy",
+            "Properties" : {
+                "PolicyDocument" : {    
+                    "Statement": [{
+                        "Effect": "Allow",
+                        "Action": [
+                        "states:StartExecution"
+                        ],
+                        "Resource": [
+                            {"Fn::Join" : [":", ["arn:aws:states",{"Ref": "AWS::Region"},{
+                                "Ref": "AWS::AccountId"
+                              },"stateMachine:DataPipelineDemo"]]
+                            }
+                        ]
+                    }]
+                },
+                "PolicyName" : "CloudwatchStepFunctionInvoke",
+                "Roles" : [ { 
+                    "Ref": "StepFunctionCwEmrRole"
+                } ]
+            }
+        },
+        "SecurityGroupEmrMaster" : {
+            "Type" : "AWS::EC2::SecurityGroup",
+            "Properties" : {
+                "GroupDescription" : "Desc",
+                "VpcId" : { "Ref" : "VPCID" },
+                "SecurityGroupIngress" : [
+                {
+                    "IpProtocol" : "tcp",
+                    "FromPort" : 22,
+                    "ToPort" : 22,
+                    "CidrIp" : "70.123.118.198/32"
+                },
+                {
+                    "IpProtocol" : "tcp",
+                    "FromPort" : 8443,
+                    "ToPort" : 8443,
+                    "CidrIp" : "52.95.24.0/23"
+                }
+                ],
+                "SecurityGroupEgress" : [{
+                    "IpProtocol" : -1,
+                    "FromPort" : 0,
+                    "ToPort" : -1,
+                    "CidrIp" : "0.0.0.0/0"
+                }]
+            }
+        },
+        "SecurityGroupEmrSlave" : {
+            "Type" : "AWS::EC2::SecurityGroup",
+            "Properties" : {
+                "GroupDescription" : "Desc",
+                "VpcId" : { "Ref" : "VPCID" },
+                "SecurityGroupEgress" : [{
+                    "IpProtocol" : -1,
+                    "FromPort" : 0,
+                    "ToPort" : -1,
+                    "CidrIp" : "0.0.0.0/0"
+                }]
+            }
+        },
+        "SecurityGroupEmrMasterIngressTCPMaster" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "TCP Master",
+                    "IpProtocol" : "tcp",
+                    "FromPort" : 0,
+                    "ToPort" : 65535,
+                    "GroupId" : {"Ref": "SecurityGroupEmrMaster"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrMaster"} 
+                }
+            
+        },
+        "SecurityGroupEmrMasterIngressTCPSlave" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "TCP Slave",
+                    "IpProtocol" : "tcp",
+                    "FromPort" : 0,
+                    "ToPort" : 65535,
+                    "GroupId" : {"Ref": "SecurityGroupEmrMaster"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrSlave"} 
+                }
+            
+        },
+        "SecurityGroupEmrMasterIngressUDPMaster" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "UDP Master",
+                    "IpProtocol" : "udp",
+                    "FromPort" : 0,
+                    "ToPort" : 65535,
+                    "GroupId" : {"Ref": "SecurityGroupEmrMaster"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrMaster"} 
+                }
+            
+        },
+        "SecurityGroupEmrMasterIngressUDPSlave" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "UDP Slave",
+                    "IpProtocol" : "udp",
+                    "FromPort" : 0,
+                    "ToPort" : 65535,
+                    "GroupId" : {"Ref": "SecurityGroupEmrMaster"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrSlave"} 
+                }
+            
+        },
+        "SecurityGroupEmrMasterIngressICMPMaster" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "ICMP Master",
+                    "IpProtocol" : "icmp",
+                    "FromPort" : -1,
+                    "ToPort" : -1,
+                    "GroupId" : {"Ref": "SecurityGroupEmrMaster"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrMaster"} 
+                }
+            
+        },
+        "SecurityGroupEmrMasterIngressICMPSlave" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "ICMP Slave",
+                    "IpProtocol" : "icmp",
+                    "FromPort" : -1,
+                    "ToPort" : -1,
+                    "GroupId" : {"Ref": "SecurityGroupEmrMaster"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrSlave"} 
+                }
+            
+        },
+        "SecurityGroupEmrSlaveIngressTCPMaster" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "TCP Master",
+                    "IpProtocol" : "tcp",
+                    "FromPort" : 0,
+                    "ToPort" : 65535,
+                    "GroupId" : {"Ref": "SecurityGroupEmrSlave"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrMaster"} 
+                }
+            
+        },
+        "SecurityGroupEmrSlaveIngressTCPSlave" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "TCP Slave",
+                    "IpProtocol" : "tcp",
+                    "FromPort" : 0,
+                    "ToPort" : 65535,
+                    "GroupId" : {"Ref": "SecurityGroupEmrSlave"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrSlave"} 
+                }
+            
+        },
+        "SecurityGroupEmrSlaveIngressUDPMaster" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "UDP Master",
+                    "IpProtocol" : "udp",
+                    "FromPort" : 0,
+                    "ToPort" : 65535,
+                    "GroupId" : {"Ref": "SecurityGroupEmrSlave"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrMaster"} 
+                }
+            
+        },
+        "SecurityGroupEmrSlaveIngressUDPSlave" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "UDP Slave",
+                    "IpProtocol" : "udp",
+                    "FromPort" : 0,
+                    "ToPort" : 65535,
+                    "GroupId" : {"Ref": "SecurityGroupEmrSlave"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrSlave"} 
+                }
+            
+        },
+        "SecurityGroupEmrSlaveIngressICMPMaster" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "ICMP Master",
+                    "IpProtocol" : "icmp",
+                    "FromPort" : -1,
+                    "ToPort" : -1,
+                    "GroupId" : {"Ref": "SecurityGroupEmrSlave"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrMaster"} 
+                }
+            
+        },
+        "SecurityGroupEmrSlaveIngressICMPSlave" : {
+            "Type" : "AWS::EC2::SecurityGroupIngress",
+            "Properties" : {
+                    "Description" : "ICMP Slave",
+                    "IpProtocol" : "icmp",
+                    "FromPort" : -1,
+                    "ToPort" : -1,
+                    "GroupId" : {"Ref": "SecurityGroupEmrSlave"},
+                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrSlave"} 
+                }
+            
+        },
+        "DataPipelineDemoSFSM": {  
+            "Type":"AWS::StepFunctions::StateMachine",
+            "Properties": {
+                "DefinitionS3Location": {
+                    "Bucket": {"Fn::Join" : ["-", ["cognizant-demo",{"Ref": "AcctId"},"code"]]
+                    },
+                    "Key": "stepfunction/DataPipelineDemo.json"
+                },
+                "RoleArn": {"Fn::GetAtt" : ["StepFunctionCwEmrRole", "Arn"]},
+                "StateMachineName": "DataPipelineDemo",
+                "StateMachineType": "STANDARD"
+            }
+        },
+        "CloudWatchEventRule": {
+            "Type" : "AWS::Events::Rule",
+            "Properties" :{
+                "Name" : "cw_DataPipelineDemo",
+                "RoleArn" : {"Fn::GetAtt" : ["StepFunctionCwEmrRole", "Arn"]},
+                "ScheduleExpression" : "rate(30 days)",
+                "State" : "DISABLED",
+                "Targets" : [{
+                    "Arn": {"Ref": "DataPipelineDemoSFSM"},
+                    "Id": "cw_DataPipelineDemo",
+                    "Input": {"Fn::Join" : ["", ["{\"Name\": \"DataPipelineDemo\",\"ReleaseLabel\": \"emr-5.31.0\",\"LogUri\": \"s3://cognizant-demo-",{"Ref":"AcctId"},"-emr-logs\",\"Ec2SubnetIds\":{\"FormattedInputsForEmr\": {\"Args\": [{ \"Arg1\": \"", { "Ref" : "Subnet1" },"\"},{\"Arg2\":\"",{ "Ref" : "Subnet2" },"\"}]} }, \"EmrManagedMasterSecurityGroup\":\"",{ "Ref" : "SecurityGroupEmrMaster" },"\", \"EmrManagedSlaveSecurityGroup\":\"",{ "Ref" : "SecurityGroupEmrSlave" },"\",\"MasterInstanceType\":\"m5.xlarge\",\"CoreInstanceType1\":\"m5.xlarge\",\"CoreInstanceType2\":\"c5.xlarge\",\"PYSPARK_PYTHON\":\"/usr/bin/python3\",\"inp\": { \"FormattedInputsForEmr\": { \"Args\": [{\"Arg1\": \"spark-submit\"}, {\"Arg2\": \"--class\"}, {\"Arg3\":\"org.apache.spark.examples.SparkPi\"}, {\"Arg4\": \"--master\"}, {\"Arg5\": \"yarn\"}, {\"Arg6\": \"--deploy-mode\"}, {\"Arg7\": \"cluster\"}, {\"Arg8\": \"s3://cognizant-demo-",{"Ref": "AcctId"},"-code/scripts/spark_demo.py\"}]      }   }}"
+                    ]
+                ]
+                },
+                    "RoleArn": {
+                    "Fn::GetAtt": ["StepFunctionCwEmrRole","Arn"]
+                    }
+                }]
+            }
+        },
+        "GlueDatabaseDemo": {
+            "Type": "AWS::Glue::Database",
+            "Properties": {
+                "CatalogId": {
+                    "Ref": "AWS::AccountId"
+                },
+                "DatabaseInput": {
+                    "Description": "Demo Database",
+                    "Name": "cognizant_cicd_demo"
+                }
+            }
+        },
+        "GlueTableDemo": {
+            "Type": "AWS::Glue::Table",
+            "Properties": {
+                "CatalogId": {
+                    "Ref": "AWS::AccountId"
+                },
+                "DatabaseName": {
+                    "Ref": "GlueDatabaseDemo"
+                },
+                "TableInput": {
+                    "Description": "Table for CICD Demo",
+                    "Name": "demo_cicd_table",
+                    "StorageDescriptor": {
+                        "Columns": [{
+                                "Name": "about",
+                                "Type": "string",
+                                "Comment": ""
+
+                            },
+                            {
+                                "Name": "address",
+                                "Type": "string",
+                                "Comment": ""
+
+                            },
+                            {
+                                "Name": "age",
+                                "Type": "bigint",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "balance",
+                                "Type": "string",
+                                "Comment": ""
+
+                            },
+                            {
+                                "Name": "company",
+                                "Type": "string",
+                                "Comment": ""
+
+                            },
+                            {
+                                "Name": "email",
+                                "Type": "string"
+
+                            },
+                            {
+                                "Name": "eyecolor",
+                                "Type": "string"
+
+                            },
+                            {
+                                "Name": "favoritefruit",
+                                "Type": "string"
+
+                            },
+                            {
+                                "Name": "friends",
+                                "Type": "array<struct<id:bigint,name:string>>"
+
+                            },
+                            {
+                                "Name": "gender",
+                                "Type": "string"
+
+                            },
+                            {
+                                "Name": "greeting",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "guid",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "id",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "index",
+                                "Type": "bigint",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "isactive",
+                                "Type": "boolean",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "latitude",
+                                "Type": "double",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "longitude",
+                                "Type": "double",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "name",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "phone",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "picture",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "registered",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "tags",
+                                "Type": "array<string>",
+                                "Comment": ""
+                            }
+                        ],
+                        "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+                        "Location": {"Fn::Join" : ["", ["s3://cognizant-demo-",{"Ref":"AcctId"},"-datalake/demoout"]]},
+                        "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+                        "Parameters": {
+                            "EXTERNAL": "TRUE",
+                            "parquet.compress": "snappy",
+                            "classfication": "parquet"
+                        },
+                        "SerdeInfo": {
+                            "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+                            "Parameters": {
+                                "Serialization.format": "1"
+                            }
+                        }
+
+                    },
+                    "TableType": "EXTERNAL_TABLE"
+                }
+            }
+        }
+    }
+}
