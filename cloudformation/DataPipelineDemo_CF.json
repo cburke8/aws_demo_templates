@@ -316,41 +316,6 @@
                 }
             
         },
-        "SecurityGroupEmrNotebookEngressMaster" : {
-            "Type" : "AWS::EC2::SecurityGroupEngress",
-            "Properties" : {
-                    "Description" : "Notebook Master",
-                    "IpProtocol" : "tcp",
-                    "FromPort" : 18888,
-                    "ToPort" : 18888,
-                    "GroupId" : {"Ref": "SecurityGroupEmrMaster"},
-                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrMaster"} 
-                }
-            
-        },
-        "SecurityGroupEmrNotebookIngressSlave" : {
-            "Type" : "AWS::EC2::SecurityGroupIngress",
-            "Properties" : {
-                    "Description" : "Notebook Slave",
-                    "IpProtocol" : "tcp",
-                    "FromPort" : 18888,
-                    "ToPort" : 18888,
-                    "GroupId" : {"Ref": "SecurityGroupEmrSlave"},
-                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrSlave"} 
-                }
-        },
-        "SecurityGroupEmrGitIngressSlave" : {
-            "Type" : "AWS::EC2::SecurityGroupIngress",
-            "Properties" : {
-                    "Description" : "Git Slave",
-                    "IpProtocol" : "tcp",
-                    "FromPort" : 443,
-                    "ToPort" : 443,
-                    "CidrIp" : "0.0.0.0/0",
-                    "GroupId" : {"Ref": "SecurityGroupEmrSlave"},
-                    "SourceSecurityGroupId": {"Ref": "SecurityGroupEmrSlave"} 
-                }
-        },
         "DataPipelineDemoSFSM": {  
             "Type":"AWS::StepFunctions::StateMachine",
             "Properties": {
