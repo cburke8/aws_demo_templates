@@ -375,13 +375,19 @@
                     "Name": "citi_bike_table",
                     "StorageDescriptor": {
                         "Columns": [{
-                                "Name": "column",
+                                "Name": "station_name",
                                 "Type": "string",
                                 "Comment": ""
+                            },
+                            {
+                                "Name": "station_id",
+                                "Type": "int",
+                                "Comment": ""
                             }
+                                    
                         ],
                         "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
-                        "Location": {"Fn::Join" : ["", ["s3://citi-bike-batch-data-con/gold/dim_station/"]]},
+                        "Location": "s3://citi-bike-batch-data-con/gold/dim_station",
                         "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
                         "Parameters": {
                             "EXTERNAL": "TRUE",
