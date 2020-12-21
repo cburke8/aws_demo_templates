@@ -356,8 +356,8 @@
                     "Ref": "AWS::AccountId"
                 },
                 "DatabaseInput": {
-                    "Description": "Demo Database",
-                    "Name": "cognizant_cicd_demo"
+                    "Description": "Glue Database Gold Layer",
+                    "Name": "cognizant_glue_db_citi_bike"
                 }
             }
         },
@@ -372,125 +372,16 @@
                 },
                 "TableInput": {
                     "Description": "Table for CICD Demo",
-                    "Name": "demo_cicd_table",
+                    "Name": "citi_bike_table",
                     "StorageDescriptor": {
                         "Columns": [{
-                                "Name": "about",
-                                "Type": "string",
-                                "Comment": ""
-
-                            },
-                            {
-                                "Name": "address",
-                                "Type": "string",
-                                "Comment": ""
-
-                            },
-                            {
-                                "Name": "age",
-                                "Type": "bigint",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "balance",
-                                "Type": "string",
-                                "Comment": ""
-
-                            },
-                            {
-                                "Name": "company",
-                                "Type": "string",
-                                "Comment": ""
-
-                            },
-                            {
-                                "Name": "email",
-                                "Type": "string"
-
-                            },
-                            {
-                                "Name": "eyecolor",
-                                "Type": "string"
-
-                            },
-                            {
-                                "Name": "favoritefruit",
-                                "Type": "string"
-
-                            },
-                            {
-                                "Name": "friends",
-                                "Type": "array<struct<id:bigint,name:string>>"
-
-                            },
-                            {
-                                "Name": "gender",
-                                "Type": "string"
-
-                            },
-                            {
-                                "Name": "greeting",
-                                "Type": "string",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "guid",
-                                "Type": "string",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "id",
-                                "Type": "string",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "index",
-                                "Type": "bigint",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "isactive",
-                                "Type": "boolean",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "latitude",
-                                "Type": "double",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "longitude",
-                                "Type": "double",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "name",
-                                "Type": "string",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "phone",
-                                "Type": "string",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "picture",
-                                "Type": "string",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "registered",
-                                "Type": "string",
-                                "Comment": ""
-                            },
-                            {
-                                "Name": "tags",
-                                "Type": "array<string>",
+                                "Name": "column_one",
+                                "Type": "parquet",
                                 "Comment": ""
                             }
                         ],
                         "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
-                        "Location": {"Fn::Join" : ["", ["s3://cognizant-demo-",{"Ref":"AcctId"},"-datalake/demoout"]]},
+                        "Location": {"Fn::Join" : ["", ["s3://citi-bike-batch-data/gold/dim_station/"]]},
                         "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
                         "Parameters": {
                             "EXTERNAL": "TRUE",
