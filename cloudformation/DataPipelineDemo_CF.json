@@ -381,7 +381,7 @@
                             }
                         ],
                         "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
-                        "Location": {"s3://citi-bike-batch-data/gold/dim_station/"},
+                        "Location": {"Fn::Join" : ["", ["s3://citi-bike-batch-data/gold/dim_station/"]]},
                         "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
                         "Parameters": {
                             "EXTERNAL": "TRUE",
