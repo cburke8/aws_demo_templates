@@ -376,7 +376,7 @@
                     "StorageDescriptor": {
                         "Columns": [{
                                 "Name": "column",
-                                "Type": "parquet",
+                                "Type": "string",
                                 "Comment": ""
                             }
                         ],
