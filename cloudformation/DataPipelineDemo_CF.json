@@ -405,6 +405,96 @@
                     "TableType": "EXTERNAL_TABLE"
                 }
             }
+        },
+        "GlueTableDemoSIT": {
+            "Type": "AWS::Glue::Table",
+            "Properties": {
+                "CatalogId": {
+                    "Ref": "AWS::AccountId"
+                },
+                "DatabaseName": {
+                    "Ref": "GlueDatabaseDemo"
+                },
+                "TableInput": {
+                    "Description": "Table for CICD Demo",
+                    "Name": "citi_bike_table",
+                    "StorageDescriptor": {
+                        "Columns": [{
+                                "Name": "station_name",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "station_id",
+                                "Type": "int",
+                                "Comment": ""
+                            }
+                                    
+                        ],
+                        "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+                        "Location": "s3://citi-bike-batch-data-si-test/gold/dim_station",
+                        "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+                        "Parameters": {
+                            "EXTERNAL": "TRUE",
+                            "parquet.compress": "snappy",
+                            "classfication": "parquet"
+                        },
+                        "SerdeInfo": {
+                            "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+                            "Parameters": {
+                                "Serialization.format": "1"
+                            }
+                        }
+
+                    },
+                    "TableType": "EXTERNAL_TABLE"
+                }
+            }
+        },
+        "GlueTableDemoUAT": {
+            "Type": "AWS::Glue::Table",
+            "Properties": {
+                "CatalogId": {
+                    "Ref": "AWS::AccountId"
+                },
+                "DatabaseName": {
+                    "Ref": "GlueDatabaseDemo"
+                },
+                "TableInput": {
+                    "Description": "Table for CICD Demo",
+                    "Name": "citi_bike_table",
+                    "StorageDescriptor": {
+                        "Columns": [{
+                                "Name": "station_name",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "station_id",
+                                "Type": "int",
+                                "Comment": ""
+                            }
+                                    
+                        ],
+                        "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+                        "Location": "s3://citi-bike-batch-data-test/gold/dim_station",
+                        "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+                        "Parameters": {
+                            "EXTERNAL": "TRUE",
+                            "parquet.compress": "snappy",
+                            "classfication": "parquet"
+                        },
+                        "SerdeInfo": {
+                            "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+                            "Parameters": {
+                                "Serialization.format": "1"
+                            }
+                        }
+
+                    },
+                    "TableType": "EXTERNAL_TABLE"
+                }
+            }
         }
     }
 }
