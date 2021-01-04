@@ -417,7 +417,7 @@
                 },
                 "TableInput": {
                     "Description": "Table for CICD Demo",
-                    "Name": "citi_bike_table",
+                    "Name": "citi_bike_table_sit",
                     "StorageDescriptor": {
                         "Columns": [{
                                 "Name": "station_name",
@@ -462,7 +462,7 @@
                 },
                 "TableInput": {
                     "Description": "Table for CICD Demo",
-                    "Name": "citi_bike_table",
+                    "Name": "citi_bike_table_uat",
                     "StorageDescriptor": {
                         "Columns": [{
                                 "Name": "station_name",
