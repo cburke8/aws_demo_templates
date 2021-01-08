@@ -511,8 +511,8 @@
                     "StorageDescriptor": {
                         "Columns": [
                             {
-                                "Name": "trip_duration",
-                                "Type": "string",
+                                "Name": "tripduration",
+                                "Type": "int",
                                 "Comment": ""
                             },
                             {
