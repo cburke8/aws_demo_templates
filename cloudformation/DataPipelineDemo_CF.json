@@ -577,7 +577,7 @@
                             },
                             {
                                 "Name": "birth_year",
-                                "Type": "int",
+                                "Type": "string",
                                 "Comment": ""
                             }
                         ],
