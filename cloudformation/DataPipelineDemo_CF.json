@@ -537,12 +537,12 @@
                             },
                             {
                                 "Name": "start_station_latitude",
-                                "Type": "float",
+                                "Type": "string",
                                 "Comment": ""
                             },
                             {
                                 "Name": "start_station_longitude",
-                                "Type": "float",
+                                "Type": "string",
                                 "Comment": ""
                             },
                             {
@@ -557,12 +557,12 @@
                             },
                             {
                                 "Name": "end_station_latitude",
-                                "Type": "float",
+                                "Type": "string",
                                 "Comment": ""
                             },
                             {
                                 "Name": "end_station_longitude",
-                                "Type": "float",
+                                "Type": "string",
                                 "Comment": ""
                             },
                             {
