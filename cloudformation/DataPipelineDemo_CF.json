@@ -495,6 +495,111 @@
                     "TableType": "EXTERNAL_TABLE"
                 }
             }
+        },
+        "GlueTableDemoSITSilver": {
+            "Type": "AWS::Glue::Table",
+            "Properties": {
+                "CatalogId": {
+                    "Ref": "AWS::AccountId"
+                },
+                "DatabaseName": {
+                    "Ref": "GlueDatabaseDemo"
+                },
+                "TableInput": {
+                    "Description": "Table for CICD Demo",
+                    "Name": "citi_bike_table_sit_silver",
+                    "StorageDescriptor": {
+                        "Columns": [
+                            {
+                                "Name": "trip_duration",
+                                "Type": "int",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "start_time",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "stop_time",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "start_station_id",
+                                "Type": "int",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "start_station_name",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "start_station_latitude",
+                                "Type": "float",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "start_station_longitude",
+                                "Type": "float",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "end_station_id",
+                                "Type": "int",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "end_station_name",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "end_station_latitude",
+                                "Type": "float",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "end_station_longitude",
+                                "Type": "float",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "bike_id",
+                                "Type": "int",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "user_type",
+                                "Type": "string",
+                                "Comment": ""
+                            },
+                            {
+                                "Name": "birth_year",
+                                "Type": "int",
+                                "Comment": ""
+                            }
+                        ],
+                        "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+                        "Location": "s3://citi-bike-batch-data-si-test/silver",
+                        "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+                        "Parameters": {
+                            "EXTERNAL": "TRUE",
+                            "parquet.compress": "snappy",
+                            "classfication": "parquet"
+                        },
+                        "SerdeInfo": {
+                            "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
+                            "Parameters": {
+                                "Serialization.format": "1"
+                            }
+                        }
+
+                    },
+                    "TableType": "EXTERNAL_TABLE"
+                }
+            }
         }
     }
 }
