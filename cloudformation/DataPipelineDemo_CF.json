@@ -512,7 +512,7 @@
                         "Columns": [
                             {
                                 "Name": "trip_duration",
-                                "Type": "int",
+                                "Type": "string",
                                 "Comment": ""
                             },
                             {
